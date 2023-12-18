@@ -1,8 +1,10 @@
 from setuptools import setup
 
+
 def readme():
     with open("README.md") as f:
         return f.read()
+
 
 setup(
     name="critdd",
@@ -34,13 +36,14 @@ setup(
         "numpy",
         "scipy",
         "networkx",
+        "scikit_posthocs",
     ],
     python_requires=">=3.6",
     include_package_data=True,
     zip_safe=False,
     test_suite="nose.collector",
-    extras_require = {
-        "tests" : ["nose", "pandas"],
-        "docs" : ["myst-parser", "sphinx-rtd-theme"],
+    extras_require={
+        "tests": ["nose", "pandas"],
+        "docs": ["myst-parser", "sphinx-rtd-theme"],
     }
 )
