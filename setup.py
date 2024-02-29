@@ -45,5 +45,5 @@ setup(
     extras_require={
         "tests": ["nose", "pandas"],
         "docs": ["myst-parser", "sphinx-rtd-theme"],
-    }
+    },
 )

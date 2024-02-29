@@ -5,11 +5,12 @@ import numpy as np
 from abc import ABC, abstractmethod
 from . import stats, tikz, tikz_2d
 
+
 class AbstractDiagram(ABC):
     """Abstract base class for critical difference diagrams in Tikz."""
 
     @abstractmethod
-    def to_str(self, alpha=.05, adjustment="holm", **kwargs):
+    def to_str(self, alpha=0.05, adjustment="holm", **kwargs):
         """Get a ``str`` object with the Tikz code for this diagram.
 
         Args:
@@ -49,9 +50,17 @@ class Diagram(AbstractDiagram):
         X: An ``(n, k)``-shaped matrix of observations, where ``n`` is the number of observations and ``k`` is the number of treatments.
         treatment_names (optional): The names of the ``k`` treatments. Defaults to None.
         maximize_outcome (optional): Whether the ranks represent a maximization (True) or a minimization (False) of the outcome. Defaults to False.
+        critical_difference (optional): The critical difference test. Defaults to "nemeyi". Another possible value is "wilcoxon".
     """
 
-    def __init__(self, X, *, treatment_names=None, maximize_outcome=False, critical_difference='nemeyi'):
+    def __init__(
+        self,
+        X,
+        *,
+        treatment_names=None,
+        maximize_outcome=False,
+        critical_difference="nemeyi",
+    ):
         if treatment_names is None:
             treatment_names = [f"treatment {i}" for i in range(X.shape[1])]
         elif len(treatment_names) != X.shape[1]:
@@ -59,11 +68,16 @@ class Diagram(AbstractDiagram):
         self.treatment_names = np.array(treatment_names)
         self.r = stats.friedman(X, maximize_outcome=maximize_outcome)
 
-        if critical_difference == 'nemeyi':
+        if critical_difference == "nemeyi":
+            print(round(stats.friedman(X).pvalue, 4))
             self.P = stats.nemeyi_test(X)
 
-        elif critical_difference == 'wilcoxon':
+        elif critical_difference == "wilcoxon":
             self.P = stats.pairwise_tests(X)
+        else:
+            raise ValueError(
+                "critical_difference should be either 'nemeyi' or 'wilcoxon'"
+            )
 
     @property
     def maximize_outcome(self):
@@ -73,15 +87,17 @@ class Diagram(AbstractDiagram):
     def average_ranks(self):
         return self.r.chi_square_result.average_ranks
 
-    def to_str(self, alpha=.05, adjustment="holm", **kwargs):
+    def to_str(self, alpha=0.05, adjustment="holm", **kwargs):
         return tikz.to_str(
             self.average_ranks,
             self.get_groups(alpha, adjustment, return_singletons=False),
             self.treatment_names,
-            **kwargs
+            **kwargs,
         )
 
-    def get_groups(self, alpha=.05, adjustment="holm", return_names=False, return_singletons=True):
+    def get_groups(
+        self, alpha=0.05, adjustment="holm", return_names=False, return_singletons=True
+    ):
         """Get the groups of indistinguishable treatments.
 
         Args:
@@ -94,7 +110,9 @@ class Diagram(AbstractDiagram):
             A list of statistically indistinguishable groups.
         """
         if self.r.pvalue >= alpha:  # does the Friedman test fail to reject?
-            return [np.arange(len(self.average_ranks))]  # all treatments in a single group
+            return [
+                np.arange(len(self.average_ranks))
+            ]  # all treatments in a single group
         P = stats.adjust_pairwise_tests(self.P, adjustment)
         G = nx.Graph(np.logical_and(np.isfinite(P), P >= alpha))
         groups = list(nx.find_cliques(G))  # groups = maximal cliques
@@ -104,20 +122,30 @@ class Diagram(AbstractDiagram):
             r_g = self.average_ranks[groups[i]]
             r_min[i] = np.min(r_g)
             r_max[i] = np.max(r_g)
-            groups[i] = np.unique(np.concatenate((
-                groups[i],
-                np.flatnonzero(np.logical_and(
-                    self.average_ranks >= r_min[i],
-                    self.average_ranks <= r_max[i]
-                ))
-            )))  # insert intermediate ranks: {r_n, r_{n+m}} -> {r_n, r_{n+1}, ..., r_{n+m}}
+            groups[i] = np.unique(
+                np.concatenate(
+                    (
+                        groups[i],
+                        np.flatnonzero(
+                            np.logical_and(
+                                self.average_ranks >= r_min[i],
+                                self.average_ranks <= r_max[i],
+                            )
+                        ),
+                    )
+                )
+            )  # insert intermediate ranks: {r_n, r_{n+m}} -> {r_n, r_{n+1}, ..., r_{n+m}}
         is_maximal = np.empty(len(groups), bool)
         for i in range(len(groups)):
-            is_maximal[i] = np.all(np.logical_and(
-                np.logical_or(r_min > r_min[i], r_max <= r_max[i]),
-                np.logical_or(r_min >= r_min[i], r_max < r_max[i])
-            ))
-        groups = [g for (g, i) in zip(groups, is_maximal) if i]  # remove non-maximal groups
+            is_maximal[i] = np.all(
+                np.logical_and(
+                    np.logical_or(r_min > r_min[i], r_max <= r_max[i]),
+                    np.logical_or(r_min >= r_min[i], r_max < r_max[i]),
+                )
+            )
+        groups = [
+            g for (g, i) in zip(groups, is_maximal) if i
+        ]  # remove non-maximal groups
         if not return_singletons:
             groups = list(filter(lambda g: len(g) > 1, groups))
         if return_names:
@@ -139,12 +167,12 @@ class Diagrams(AbstractDiagram):
     """
 
     def __init__(
-            self,
-            Xs,
-            *,
-            diagram_names=None,
-            treatment_names=None,
-            maximize_outcome=False,
+        self,
+        Xs,
+        *,
+        diagram_names=None,
+        treatment_names=None,
+        maximize_outcome=False,
     ):
         n_diagrams = len(Xs)
         n_treatments = Xs[0].shape[1]
@@ -160,7 +188,9 @@ class Diagrams(AbstractDiagram):
             raise ValueError("len(treatment_names) != Xs[i].shape[1]")
         self.diagram_names = diagram_names
         self.diagrams = [
-            Diagram(X, treatment_names=treatment_names, maximize_outcome=maximize_outcome)
+            Diagram(
+                X, treatment_names=treatment_names, maximize_outcome=maximize_outcome
+            )
             for X in Xs
         ]
 
@@ -175,11 +205,14 @@ class Diagrams(AbstractDiagram):
     def treatment_names(self):
         return self.diagrams[0].treatment_names
 
-    def to_str(self, alpha=.05, adjustment="holm", **kwargs):
+    def to_str(self, alpha=0.05, adjustment="holm", **kwargs):
         return tikz_2d.to_str(
             np.stack([d.average_ranks for d in self.diagrams]),
-            [d.get_groups(alpha, adjustment, return_singletons=False) for d in self.diagrams],
+            [
+                d.get_groups(alpha, adjustment, return_singletons=False)
+                for d in self.diagrams
+            ],
             self.treatment_names,
             self.diagram_names,
-            **kwargs
+            **kwargs,
         )
