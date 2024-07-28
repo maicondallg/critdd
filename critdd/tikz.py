@@ -43,21 +43,23 @@ def _merge_dicts(a, b):
 def to_file(path, tikz_code):
     """Export the tikz_code to a file."""
     root, ext = os.path.splitext(path)
+    p = os.path.dirname(path)
     if ext not in [".tex", ".tikz", ".pdf", ".svg", ".png"]:
         raise ValueError("Unknown file path extension")
     if ext in [".pdf", ".svg", ".png"]:
         path = root + ".tex"
+
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:  # store the Tikz code in a .tex or .tikz file
         f.write(tikz_code)
     if ext in [".tex", ".tikz"]:
         return None  # we are done here
     pdflatex = subprocess.Popen(
-        ["pdflatex", "-interaction=nonstopmode", "-halt-on-error", path],
+        ["pdflatex", f"-output-directory={p}", "-halt-on-error", path],
         stdout=subprocess.PIPE,
     )
     (out, err) = pdflatex.communicate()  # convert to PDF
     if pdflatex.returncode:
-        print(out.decode())
         raise ExportException(root + ".pdf")
     if ext == ".svg":
         pdf_to_svg = subprocess.Popen(
@@ -65,11 +67,9 @@ def to_file(path, tikz_code):
         )
         (out, err) = pdf_to_svg.communicate()  # convert to SVG
         if pdf_to_svg.returncode:
-            print(out.decode())
             raise ExportException(root + ".svg")
     elif ext == ".png":
         raise NotImplementedError(f"{ext} export is not yet implemented")
-    
     # Remove .tex, .log, .aux files
     os.remove(root + ".tex")
     os.remove(root + ".log")

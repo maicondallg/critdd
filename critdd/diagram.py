@@ -69,7 +69,6 @@ class Diagram(AbstractDiagram):
         self.r = stats.friedman(X, maximize_outcome=maximize_outcome)
 
         if critical_difference == "nemeyi":
-            print(round(stats.friedman(X).pvalue, 4))
             self.P = stats.nemeyi_test(X)
 
         elif critical_difference == "wilcoxon":
