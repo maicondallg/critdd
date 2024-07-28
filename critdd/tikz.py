@@ -69,7 +69,9 @@ def to_file(path, tikz_code):
         if pdf_to_svg.returncode:
             raise ExportException(root + ".svg")
     elif ext == ".png":
-        raise NotImplementedError(f"{ext} export is not yet implemented")
+        pdf_to_png = subprocess.Popen(
+            ["pdftocairo", root + ".pdf", root, "-png", "-singlefile"], stdout=subprocess.PIPE
+        )
     # Remove .tex, .log, .aux files
     os.remove(root + ".tex")
     os.remove(root + ".log")

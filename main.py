@@ -14,6 +14,6 @@ if __name__ == "__main__":
         maximize_outcome=True,
         critical_difference="nemeyi",
     )
-    diagram.to_file("plots/ExemploF1.pdf",
+    diagram.to_file("plots/ExemploF1.png",
                     reverse_x=False,
                     )

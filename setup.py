@@ -8,7 +8,7 @@ def readme():
 
 setup(
     name="critdd",
-    version="0.0.5-dev",
+    version="0.0.6-dev",
     description="Critical difference diagrams with Python and Tikz",
     long_description=readme(),
     classifiers=[
