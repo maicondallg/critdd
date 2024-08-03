@@ -54,13 +54,15 @@ class Diagram(AbstractDiagram):
     """
 
     def __init__(
-        self,
-        X,
-        *,
-        treatment_names=None,
-        maximize_outcome=False,
-        critical_difference="nemeyi",
+            self,
+            X,
+            *,
+            treatment_names=None,
+            maximize_outcome=False,
+            adjustment=None,
+            critical_difference="nemeyi",
     ):
+        self.adjustment = adjustment
         if treatment_names is None:
             treatment_names = [f"treatment {i}" for i in range(X.shape[1])]
         elif len(treatment_names) != X.shape[1]:
@@ -95,7 +97,7 @@ class Diagram(AbstractDiagram):
         )
 
     def get_groups(
-        self, alpha=0.05, adjustment="holm", return_names=False, return_singletons=True
+            self, alpha=0.05, adjustment="holm", return_names=False, return_singletons=True
     ):
         """Get the groups of indistinguishable treatments.
 
@@ -112,7 +114,13 @@ class Diagram(AbstractDiagram):
             return [
                 np.arange(len(self.average_ranks))
             ]  # all treatments in a single group
-        P = stats.adjust_pairwise_tests(self.P, adjustment)
+        if self.adjustment is None:
+            P = self.P
+        elif self.adjustment == 'holm':
+            P = stats.adjust_pairwise_tests(self.P, adjustment)
+        else:
+            raise f'{self.adjustment} is not available'
+
         G = nx.Graph(np.logical_and(np.isfinite(P), P >= alpha))
         groups = list(nx.find_cliques(G))  # groups = maximal cliques
         r_min = np.empty(len(groups))  # minimum and maximum rank per group
@@ -166,23 +174,23 @@ class Diagrams(AbstractDiagram):
     """
 
     def __init__(
-        self,
-        Xs,
-        *,
-        diagram_names=None,
-        treatment_names=None,
-        maximize_outcome=False,
+            self,
+            Xs,
+            *,
+            diagram_names=None,
+            treatment_names=None,
+            maximize_outcome=False,
     ):
         n_diagrams = len(Xs)
         n_treatments = Xs[0].shape[1]
         if not np.all([X.shape[1] == n_treatments for X in Xs]):
             raise ValueError("Xs has elements with different numbers of treatments")
         if diagram_names is None:
-            diagram_names = [f"diagram {i+1}" for i in range(n_diagrams)]
+            diagram_names = [f"diagram {i + 1}" for i in range(n_diagrams)]
         elif len(diagram_names) != n_diagrams:
             raise ValueError("len(diagram_names) != len(Xs)")
         if treatment_names is None:
-            treatment_names = [f"treatment {i+1}" for i in range(n_treatments)]
+            treatment_names = [f"treatment {i + 1}" for i in range(n_treatments)]
         elif len(treatment_names) != n_treatments:
             raise ValueError("len(treatment_names) != Xs[i].shape[1]")
         self.diagram_names = diagram_names
