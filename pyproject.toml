@@ -1,0 +1,43 @@
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.poetry]
+name = "critdd"
+version = "0.0.8-dev"
+description = "Critical difference diagrams with Python and Tikz"
+authors = ["Mirko Bunse <mirko.bunse@cs.tu-dortmund.de>"]
+license = "GPL-3"
+readme = "README.md"
+repository = "https://github.com/mirkobunse/critdd"
+keywords = [
+    "machine-learning",
+    "benchmark",
+    "hypothesis-testing",
+    "post-hoc-analysis",
+]
+classifiers = [
+    "Operating System :: POSIX :: Linux",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Tikz",
+    "License :: OSI Approved :: GPL-3 License",
+    "Development Status :: 3 - Alpha",
+]
+
+[tool.poetry.dependencies]
+python = ">=3.6"
+numpy = "*"
+scipy = "*"
+networkx = "*"
+scikit_posthocs = "*"
+
+[tool.poetry.group.test.dependencies]
+nose = "*"
+pandas = "*"
+
+[tool.poetry.group.docs.dependencies]
+myst-parser = "*"
+sphinx-rtd-theme = "*" 
